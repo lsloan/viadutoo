@@ -118,11 +118,8 @@ class Proxy {
 
             $responseCode = $response->getResponseCode();
             $responseText = $responseCode;
-        }
-
-        /*
-        elseif (extension_loaded('curl')) {
-            $client = curl_init($this->getOptions()->getHost());
+        } elseif (extension_loaded('curl')) {
+            $client = curl_init($this->getEndpointUrl());
 
             $headerStrings = [];
             foreach ($headers as $headerKey => $headerValue) {
@@ -131,12 +128,12 @@ class Proxy {
 
             curl_setopt_array($client, [
                 CURLOPT_POST => true,
-                CURLOPT_TIMEOUT_MS => $this->getOptions()->getConnectionTimeout(),
+                CURLOPT_TIMEOUT_MS => $this->getTimeoutSeconds(),
                 CURLOPT_HTTPHEADER => $headerStrings,
                 CURLOPT_USERAGENT => 'Caliper (PHP curl extension)',
-                CURLOPT_HEADER => true, // CURLOPT_HEADER required to return response text
-                CURLOPT_RETURNTRANSFER => true, // CURLOPT_RETURNTRANSFER required to return response text
-                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_HEADER => true, // required to return response text
+                CURLOPT_RETURNTRANSFER => true, // required to return response text
+                CURLOPT_POSTFIELDS => $this->getBody(),
             ]);
 
             $responseText = curl_exec($client);
@@ -149,7 +146,6 @@ class Proxy {
                 $responseCode = null;
             }
         }
-        */
 
         if ($responseCode != 200) {
             throw new RuntimeException('Failure: HTTP error: ' . $responseText);
