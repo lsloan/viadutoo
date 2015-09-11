@@ -5,6 +5,8 @@ require_once 'Viadutoo/db/SQLite3Storage.php';
 $headers = getallheaders();
 $body = file_get_contents('php://input');
 
+http_response_code(100);
+
 foreach ($headers as $name => $value) {
     error_log("${name}: ${value}");
 }
