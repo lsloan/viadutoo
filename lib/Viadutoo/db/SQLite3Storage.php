@@ -32,7 +32,6 @@ EOT
         $statement->bindValue(':headers', json_encode($headers), SQLITE3_TEXT);
         $statement->bindValue(':body', $body, SQLITE3_TEXT);
         $result = $statement->execute();
-        error_log(print_r($result->fetchArray(), true));
 
         return $result;
     }
