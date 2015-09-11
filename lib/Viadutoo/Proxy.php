@@ -12,8 +12,8 @@ class Proxy {
     private $_headers;
     /** @var string */
     private $_body;
-    /** @var int */
-    private $_timeoutSeconds = 5;
+    /** @var float|null */
+    private $_timeoutSeconds = null;
 
     public function __construct() {
         $this->_haveExtensionCurl = extension_loaded('curl');
@@ -70,17 +70,21 @@ class Proxy {
         return $this;
     }
 
-    /** @return int */
+    /** @return float|null */
     public function getTimeoutSeconds() {
         return $this->_timeoutSeconds;
     }
 
     /**
-     * @param int $timeoutSeconds
+     * @param float|null $timeoutSeconds
      * @return $this
      */
     public function setTimeoutSeconds($timeoutSeconds) {
-        $this->_timeoutSeconds = intval($timeoutSeconds);
+        if ($timeoutSeconds != null) {
+            $this->_timeoutSeconds = floatval($timeoutSeconds);
+        } else {
+            $this->_timeoutSeconds = null;
+        }
         return $this;
     }
 
@@ -107,9 +111,14 @@ class Proxy {
                 (new http\Message())
                     ->getBody()
                     ->append($this->getBody())
-            ))->setOptions([
-                'timeout' => $this->getTimeoutSeconds()
-            ]);
+            ));
+
+            $timeoutSeconds = $this->getTimeoutSeconds();
+            if ($timeoutSeconds != null) {
+                $request->setOptions([
+                    'timeout' => $timeoutSeconds
+                ]);
+            }
 
             $response = (new http\Client)
                 ->enqueue($request)
@@ -126,15 +135,22 @@ class Proxy {
                 $headerStrings[] = $headerKey . ': ' . $headerValue;
             }
 
-            curl_setopt_array($client, [
+            $curlOptions = [
                 CURLOPT_POST => true,
-                CURLOPT_TIMEOUT_MS => $this->getTimeoutSeconds(),
+                CURLOPT_NOSIGNAL => true, // required for timeouts to work properly
                 CURLOPT_HTTPHEADER => $headerStrings,
                 CURLOPT_USERAGENT => 'Caliper (PHP curl extension)',
                 CURLOPT_HEADER => true, // required to return response text
                 CURLOPT_RETURNTRANSFER => true, // required to return response text
                 CURLOPT_POSTFIELDS => $this->getBody(),
-            ]);
+            ];
+
+            $timeoutSeconds = $this->getTimeoutSeconds();
+            if ($timeoutSeconds != null) {
+                $curlOptions[CURLOPT_TIMEOUT_MS] = intval($timeoutSeconds * 1000);
+            }
+
+            curl_setopt_array($client, $curlOptions);
 
             $responseText = curl_exec($client);
             $responseInfo = curl_getinfo($client);
