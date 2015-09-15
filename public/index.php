@@ -3,8 +3,7 @@ require_once '../lib/Viadutoo/Proxy.php';
 require_once 'Viadutoo/db/MysqlStorage.php';
 require_once 'Viadutoo/db/SQLite3Storage.php';
 
-$requestMethod = strtoupper($_SERVER['REQUEST_METHOD']);
-if ($requestMethod != 'POST') {
+if (strtoupper($_SERVER['REQUEST_METHOD']) != 'POST') {
     http_response_code(405); // "Method not allowed"
     exit;
 }
