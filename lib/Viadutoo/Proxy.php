@@ -16,6 +16,8 @@ class Proxy {
     private $_body;
     /** @var float|null */
     private $_timeoutSeconds = null;
+    /** @var bool */
+    private $_autostoreOnSendFailure = true;
 
     public function __construct() {
         $this->_haveExtensionCurl = extension_loaded('curl');
@@ -24,6 +26,20 @@ class Proxy {
         if (!$this->_haveExtensionCurl && !$this->_haveExtensionHttp) {
             throw new RuntimeException('One of these PHP extensions is required: "http" (AKA pecl_http) or "curl".');
         }
+    }
+
+    /** @return bool */
+    public function isAutostoreOnSendFailure() {
+        return $this->_autostoreOnSendFailure;
+    }
+
+    /**
+     * @param bool $autostoreOnSendFailure
+     * @return $this
+     */
+    public function setAutostoreOnSendFailure($autostoreOnSendFailure) {
+        $this->_autostoreOnSendFailure = filter_var($autostoreOnSendFailure, FILTER_VALIDATE_BOOLEAN);
+        return $this;
     }
 
     /** @return string */
@@ -155,7 +171,6 @@ class Proxy {
                 CURLOPT_POST => true,
                 CURLOPT_NOSIGNAL => true, // required for timeouts to work properly
                 CURLOPT_HTTPHEADER => $headerStrings,
-                CURLOPT_USERAGENT => 'Caliper (PHP curl extension)',
                 CURLOPT_HEADER => true, // required to return response text
                 CURLOPT_RETURNTRANSFER => true, // required to return response text
                 CURLOPT_POSTFIELDS => $this->getBody(),
@@ -180,7 +195,11 @@ class Proxy {
         }
 
         if ($responseCode != 200) {
-            throw new RuntimeException('Failure: HTTP error: ' . $responseText);
+            if ($this->isAutostoreOnSendFailure()) {
+                $this->store();
+            } else {
+                throw new RuntimeException('Failure: HTTP error: ' . $responseText);
+            }
         } else {
             $status = true;
         }
