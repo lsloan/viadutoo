@@ -8,6 +8,8 @@ class Proxy {
     private $_haveExtensionCurl = false;
     /** @var bool */
     private $_haveExtensionHttp = false;
+    /** @var StorageInterface */
+    private $_storageInterface = null;
     /** @var string */
     private $_endpointUrl;
     /** @var string[] */
@@ -52,7 +54,7 @@ class Proxy {
      * @return $this
      */
     public function setEndpointUrl($endpointUrl) {
-        $this->_endpointUrl = $endpointUrl;
+        $this->_endpointUrl = strval($endpointUrl);
         return $this;
     }
 
@@ -84,7 +86,7 @@ class Proxy {
      * @return $this
      */
     public function setBody($body) {
-        $this->_body = $body;
+        $this->_body = strval($body);
         return $this;
     }
 
@@ -108,19 +110,30 @@ class Proxy {
 
     /** @return StorageInterface */
     public function getStorageInterface() {
-        return $this->_StorageInterface;
+        return $this->_storageInterface;
     }
 
     /**
-     * @param StorageInterface $StorageInterface
+     * Specify an object that implements StorageInterface to store data.
+     *
+     * @param StorageInterface $storageInterface
      * @return $this
      */
-    public function setStorageInterface($StorageInterface) {
-        $this->_StorageInterface = $StorageInterface;
+    public function setStorageInterface($storageInterface) {
+        if (!($storageInterface instanceof StorageInterface)) {
+            throw new InvalidArgumentException(__METHOD__ . ': instance of StorageInterface expected.');
+        }
+
+        $this->_storageInterface = $storageInterface;
         return $this;
     }
 
     /**
+     * Send the data to the specified endpoint.
+     *
+     * If isAutostoreOnSendFailure() is true, then this method will automatically
+     * call store() if the send fails.
+     *
      * @return bool
      */
     public function send() {
@@ -208,6 +221,11 @@ class Proxy {
     }
 
     public function store() {
+        $storageInterface = $this->getStorageInterface();
+
+        if ($storageInterface == null) {
+            throw new RuntimeException('Storage interface not specified.  Use setStorageInterface() before calling ' . __FUNCTION__ . '.');
+        }
         $this->getStorageInterface()->store($this->getHeaders(), $this->getBody());
     }
 }
