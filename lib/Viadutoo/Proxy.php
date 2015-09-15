@@ -8,6 +8,8 @@ class Proxy {
     private $_haveExtensionCurl = false;
     /** @var bool */
     private $_haveExtensionHttp = false;
+    /** @var TransportInterface */
+    private $_transportInterface = null;
     /** @var StorageInterface */
     private $_storageInterface = null;
     /** @var string */
