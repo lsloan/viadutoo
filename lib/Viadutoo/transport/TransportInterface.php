@@ -1,10 +1,9 @@
 <?php
 
-interface StorageInterface {
+interface TransportInterface {
     /**
-     * @param string[] $headers
-     * @param string $body
-     * @return mixed
+     * @param Proxy $proxy
+     * @return bool
      */
-    function store($headers, $body);
+    public function send($proxy);
 }
