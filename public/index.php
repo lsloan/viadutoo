@@ -26,16 +26,13 @@ $proxy = (new Proxy())
 //    ->setStorageInterface(new SQLite3Storage('mysqlitedb.db'));
     ->setStorageInterface(new MysqlStorage('127.0.0.1', 'root', 'root', 'media'));
 
-$success = false;
+$success = null;
 try {
     $success = $proxy->setHeaders($headers)
         ->setBody($body)
         ->send();
 } catch (Exception $exception) {
 }
-
-// fixme: remove this statement, only for debugging to force storage
-$success = false;
 
 if (($success !== true) && !$proxy->isAutostoreOnSendFailure()) {
     error_log('Send not successful, storing data...');
