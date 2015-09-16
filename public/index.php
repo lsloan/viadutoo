@@ -15,7 +15,8 @@ require_once 'Viadutoo/db/SQLite3Storage.php';
  * @param bool $validMethod
  */
 function respondAndCloseConnection($validMethod) {
-    ob_start(); // Start output buffer so it can end early
+    ob_end_clean(); // Discard any previous output
+    ob_start(); // Start output buffer so it can be flushed on demand
 
     if ($validMethod !== true) {
         http_response_code(405);
