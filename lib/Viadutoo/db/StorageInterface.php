@@ -6,5 +6,5 @@ interface StorageInterface {
      * @param string $body
      * @return mixed
      */
-    function store($headers, $body);
+    public function store($headers, $body);
 }
