@@ -1,5 +1,7 @@
 <?php
 require_once '../lib/Viadutoo/Proxy.php';
+require_once 'Viadutoo/transport/PeclHttpTransport.php';
+require_once 'Viadutoo/transport/CurlTransport.php';
 require_once 'Viadutoo/db/MysqlStorage.php';
 require_once 'Viadutoo/db/SQLite3Storage.php';
 
@@ -20,6 +22,8 @@ error_log("Raw post data:\n${body}");
 error_log('Received ' . strlen($body) . ' bytes');
 
 $proxy = (new Proxy())
+    ->setTransportInterface(new PeclHttpTransport())
+//    ->setTransportInterface(new CurlTransport())
     ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
     ->setTimeoutSeconds(15)
     ->setAutostoreOnSendFailure(false)
@@ -32,6 +36,7 @@ try {
         ->setBody($body)
         ->send();
 } catch (Exception $exception) {
+    error_log($exception->getMessage());
 }
 
 if (($success !== true) && !$proxy->isAutostoreOnSendFailure()) {
