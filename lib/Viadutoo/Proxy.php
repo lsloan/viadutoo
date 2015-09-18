@@ -1,11 +1,15 @@
 <?php
 set_include_path(get_include_path() . PATH_SEPARATOR . realpath(dirname(__FILE__) . '/..'));
 
+require_once 'Viadutoo/db/StorageInterface.php';
+
 class Proxy {
     /** @var bool */
     private $_haveExtensionCurl = false;
     /** @var bool */
     private $_haveExtensionHttp = false;
+    /** @var StorageInterface */
+    private $_storageInterface = null;
     /** @var string */
     private $_endpointUrl;
     /** @var string[] */
@@ -14,6 +18,8 @@ class Proxy {
     private $_body;
     /** @var float|null */
     private $_timeoutSeconds = null;
+    /** @var bool */
+    private $_autostoreOnSendFailure = true;
 
     public function __construct() {
         $this->_haveExtensionCurl = extension_loaded('curl');
@@ -22,6 +28,20 @@ class Proxy {
         if (!$this->_haveExtensionCurl && !$this->_haveExtensionHttp) {
             throw new RuntimeException('One of these PHP extensions is required: "http" (AKA pecl_http) or "curl".');
         }
+    }
+
+    /** @return bool */
+    public function isAutostoreOnSendFailure() {
+        return $this->_autostoreOnSendFailure;
+    }
+
+    /**
+     * @param bool $autostoreOnSendFailure
+     * @return $this
+     */
+    public function setAutostoreOnSendFailure($autostoreOnSendFailure) {
+        $this->_autostoreOnSendFailure = filter_var($autostoreOnSendFailure, FILTER_VALIDATE_BOOLEAN);
+        return $this;
     }
 
     /** @return string */
@@ -34,7 +54,7 @@ class Proxy {
      * @return $this
      */
     public function setEndpointUrl($endpointUrl) {
-        $this->_endpointUrl = $endpointUrl;
+        $this->_endpointUrl = strval($endpointUrl);
         return $this;
     }
 
@@ -66,7 +86,7 @@ class Proxy {
      * @return $this
      */
     public function setBody($body) {
-        $this->_body = $body;
+        $this->_body = strval($body);
         return $this;
     }
 
@@ -88,7 +108,32 @@ class Proxy {
         return $this;
     }
 
+    /** @return StorageInterface */
+    public function getStorageInterface() {
+        return $this->_storageInterface;
+    }
+
     /**
+     * Specify an object that implements StorageInterface to store data.
+     *
+     * @param StorageInterface $storageInterface
+     * @return $this
+     */
+    public function setStorageInterface($storageInterface) {
+        if (!($storageInterface instanceof StorageInterface)) {
+            throw new InvalidArgumentException(__METHOD__ . ': instance of StorageInterface expected.');
+        }
+
+        $this->_storageInterface = $storageInterface;
+        return $this;
+    }
+
+    /**
+     * Send the data to the specified endpoint.
+     *
+     * If isAutostoreOnSendFailure() is true, then this method will automatically
+     * call store() if the send fails.
+     *
      * @return bool
      */
     public function send() {
@@ -139,7 +184,6 @@ class Proxy {
                 CURLOPT_POST => true,
                 CURLOPT_NOSIGNAL => true, // required for timeouts to work properly
                 CURLOPT_HTTPHEADER => $headerStrings,
-                CURLOPT_USERAGENT => 'Caliper (PHP curl extension)',
                 CURLOPT_HEADER => true, // required to return response text
                 CURLOPT_RETURNTRANSFER => true, // required to return response text
                 CURLOPT_POSTFIELDS => $this->getBody(),
@@ -164,11 +208,24 @@ class Proxy {
         }
 
         if ($responseCode != 200) {
-            throw new RuntimeException('Failure: HTTP error: ' . $responseText);
+            if ($this->isAutostoreOnSendFailure()) {
+                $this->store();
+            } else {
+                throw new RuntimeException('Failure: HTTP error: ' . $responseText);
+            }
         } else {
             $status = true;
         }
 
         return $status;
+    }
+
+    public function store() {
+        $storageInterface = $this->getStorageInterface();
+
+        if ($storageInterface == null) {
+            throw new RuntimeException('Storage interface not specified.  Use setStorageInterface() before calling ' . __FUNCTION__ . '.');
+        }
+        $this->getStorageInterface()->store($this->getHeaders(), $this->getBody());
     }
 }
