@@ -29,8 +29,7 @@ function respondAndCloseConnection($validMethod) {
     header('Content-Length: ' . ob_get_length());
     header('Connection: close');  // Tell remote client to close connection
 
-    ob_end_flush(); // End output buffer and flush it to client
-    ob_flush(); // Part 1 of complete flush, according to PHP docs
+    ob_end_flush(); // End output buffer and flush it to client (part 1)
     flush(); // Part 2 of complete flush
 
     // Close any session to prevent blocking
