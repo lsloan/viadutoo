@@ -1,4 +1,11 @@
 <?php
+/*
+ * This application is an example of using Viadutoo's Proxy class along
+ * with its TransportInterface and StorageInterface implementations to
+ * accept JSON payloads, attempt to send them via the specified transport,
+ * and store them via the specified storage interface if the send fails.
+ */
+
 require_once '../lib/Viadutoo/Proxy.php';
 require_once 'Viadutoo/transport/PeclHttpTransport.php';
 require_once 'Viadutoo/transport/CurlTransport.php';
