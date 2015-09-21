@@ -2,6 +2,12 @@
 require_once 'Viadutoo/transport/BaseTransport.php';
 
 class PeclHttpTransport extends BaseTransport {
+    public function __construct() {
+        if (!extension_loaded('http')) {
+            throw new RuntimeException('The "http" (AKA "pecl_http") extension for PHP is required.');
+        }
+    }
+
     /**
      * @param string[] $headers
      * @param string $body

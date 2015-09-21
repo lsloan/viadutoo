@@ -23,15 +23,6 @@ class Proxy {
     /** @var bool */
     private $_autostoreOnSendFailure = true;
 
-    public function __construct() {
-        $this->_haveExtensionCurl = extension_loaded('curl');
-        $this->_haveExtensionHttp = extension_loaded('http');
-
-        if (!$this->_haveExtensionCurl && !$this->_haveExtensionHttp) {
-            throw new RuntimeException('One of these PHP extensions is required: "http" (AKA pecl_http) or "curl".');
-        }
-    }
-
     /** @return bool */
     public function isAutostoreOnSendFailure() {
         return $this->_autostoreOnSendFailure;

@@ -2,6 +2,12 @@
 require_once 'Viadutoo/transport/BaseTransport.php';
 
 class CurlTransport extends BaseTransport {
+    public function __construct() {
+        if (!extension_loaded('curl')) {
+            throw new RuntimeException('The "curl" extension for PHP is required.');
+        }
+    }
+
     /**
      * @param string[] $headers
      * @param string $body
