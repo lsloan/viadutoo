@@ -23,17 +23,53 @@ class MessageProxy {
     /** @var bool */
     private $_autostoreOnSendFailure = true;
 
-    /** @return bool */
-    public function isAutostoreOnSendFailure() {
-        return $this->_autostoreOnSendFailure;
+    /**
+     * Send the data to the specified endpoint.
+     *
+     * If isAutostoreOnSendFailure() is true, then this method will automatically
+     * call store() if the send fails.
+     *
+     * @return bool Success
+     */
+    public function send() {
+        $transportInterface = $this->getTransportInterface();
+        if ($transportInterface == null) {
+            throw new RuntimeException('Transport interface not specified.  Use setTransportInterface() before calling ' . __FUNCTION__ . '.');
+        }
+
+        $transportInterface
+            ->setEndpointUrl($this->getEndpointUrl())
+            ->setTimeoutSeconds($this->getTimeoutSeconds());
+
+        $success = $transportInterface
+            ->send($this->getHeaders(), $this->getBody());
+
+        if ($success !== true) {
+            if ($this->isAutostoreOnSendFailure()) {
+                $this->store();
+            } else {
+                throw new RuntimeException('Failure: HTTP error: ' . $this->getLastNativeResultFromSend());
+            }
+        }
+
+        return $success;
+    }
+
+    /** @return TransportInterface */
+    public function getTransportInterface() {
+        return $this->_transportInterface;
     }
 
     /**
-     * @param bool $autostoreOnSendFailure
+     * @param TransportInterface $transportInterface
      * @return $this
      */
-    public function setAutostoreOnSendFailure($autostoreOnSendFailure) {
-        $this->_autostoreOnSendFailure = filter_var($autostoreOnSendFailure, FILTER_VALIDATE_BOOLEAN);
+    public function setTransportInterface($transportInterface) {
+        if (!($transportInterface instanceof TransportInterface)) {
+            throw new InvalidArgumentException(__METHOD__ . ': instance of TransportInterface expected.');
+        }
+
+        $this->_transportInterface = $transportInterface;
         return $this;
     }
 
@@ -48,6 +84,29 @@ class MessageProxy {
      */
     public function setEndpointUrl($endpointUrl) {
         $this->_endpointUrl = strval($endpointUrl);
+        return $this;
+    }
+
+    /** @return float|null */
+    public function getTimeoutSeconds() {
+        return $this->_timeoutSeconds;
+    }
+
+    /**
+     * The number of seconds to wait for the data to be sent.
+     *
+     * Fractions of a second, down to the millisecond, may be specified.  Setting this to
+     * null would use the default timeout value specified by the transport.
+     *
+     * @param float|null $timeoutSeconds
+     * @return $this
+     */
+    public function setTimeoutSeconds($timeoutSeconds) {
+        if ($timeoutSeconds != null) {
+            $this->_timeoutSeconds = floatval($timeoutSeconds);
+        } else {
+            $this->_timeoutSeconds = null;
+        }
         return $this;
     }
 
@@ -83,27 +142,31 @@ class MessageProxy {
         return $this;
     }
 
-    /** @return float|null */
-    public function getTimeoutSeconds() {
-        return $this->_timeoutSeconds;
+    /** @return bool */
+    public function isAutostoreOnSendFailure() {
+        return $this->_autostoreOnSendFailure;
     }
 
     /**
-     * The number of seconds to wait for the data to be sent.
-     *
-     * Fractions of a second, down to the millisecond, may be specified.  Setting this to
-     * null would use the default timeout value specified by the transport.
-     *
-     * @param float|null $timeoutSeconds
+     * @param bool $autostoreOnSendFailure
      * @return $this
      */
-    public function setTimeoutSeconds($timeoutSeconds) {
-        if ($timeoutSeconds != null) {
-            $this->_timeoutSeconds = floatval($timeoutSeconds);
-        } else {
-            $this->_timeoutSeconds = null;
-        }
+    public function setAutostoreOnSendFailure($autostoreOnSendFailure) {
+        $this->_autostoreOnSendFailure = filter_var($autostoreOnSendFailure, FILTER_VALIDATE_BOOLEAN);
         return $this;
+    }
+
+    /**
+     * @return bool Success
+     */
+    public function store() {
+        $storageInterface = $this->getStorageInterface();
+
+        if ($storageInterface == null) {
+            throw new RuntimeException('Storage interface not specified.  Use setStorageInterface() before calling ' . __FUNCTION__ . '.');
+        }
+
+        return $this->getStorageInterface()->store($this->getHeaders(), $this->getBody());
     }
 
     /** @return StorageInterface */
@@ -126,67 +189,23 @@ class MessageProxy {
         return $this;
     }
 
-    /** @return TransportInterface */
-    public function getTransportInterface() {
-        return $this->_transportInterface;
+    /** @return mixed */
+    public function getLastNativeResultFromSend() {
+        return $this->getTransportInterface()->getLastNativeResultFromSend();
     }
 
-    /**
-     * @param TransportInterface $transportInterface
-     * @return $this
-     */
-    public function setTransportInterface($transportInterface) {
-        if (!($transportInterface instanceof TransportInterface)) {
-            throw new InvalidArgumentException(__METHOD__ . ': instance of TransportInterface expected.');
-        }
-
-        $this->_transportInterface = $transportInterface;
-        return $this;
+    /** @return bool */
+    public function getLastSuccessFromSend() {
+        return $this->getTransportInterface()->getLastSuccessFromSend();
     }
 
-    /**
-     * Send the data to the specified endpoint.
-     *
-     * If isAutostoreOnSendFailure() is true, then this method will automatically
-     * call store() if the send fails.
-     *
-     * @return bool Success
-     */
-    public function send() {
-        $transportInterface = $this->getTransportInterface();
-        if ($transportInterface == null) {
-            throw new RuntimeException('Transport interface not specified.  Use setTransportInterface() before calling ' . __FUNCTION__ . '.');
-        }
-
-        $success = false;
-
-        $transportInterface
-            ->setEndpointUrl($this->getEndpointUrl())
-            ->setTimeoutSeconds($this->getTimeoutSeconds());
-
-        $responseCode = $transportInterface
-            ->send($this->getHeaders(), $this->getBody());
-
-        if ($responseCode != 200) {
-            if ($this->isAutostoreOnSendFailure()) {
-                $this->store();
-            } else {
-                throw new RuntimeException('Failure: HTTP error: ' . $responseCode);
-            }
-        } else {
-            $success = true;
-        }
-
-        return $success;
+    /** @return mixed */
+    public function getLastNativeResultFromStore() {
+        return $this->getStorageInterface()->getLastNativeResultFromStore();
     }
 
-    public function store() {
-        $storageInterface = $this->getStorageInterface();
-
-        if ($storageInterface == null) {
-            throw new RuntimeException('Storage interface not specified.  Use setStorageInterface() before calling ' . __FUNCTION__ . '.');
-        }
-
-        $this->getStorageInterface()->store($this->getHeaders(), $this->getBody());
+    /** @return bool */
+    public function getLastSuccessFromStore() {
+        return $this->getStorageInterface()->getLastSuccessFromStore();
     }
 }

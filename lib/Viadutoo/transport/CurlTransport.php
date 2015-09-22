@@ -2,6 +2,9 @@
 require_once 'Viadutoo/transport/BaseTransport.php';
 
 class CurlTransport extends BaseTransport {
+    /** @var array */
+    protected $_lastNativeResultFromSend;
+
     public function __construct() {
         if (!extension_loaded('curl')) {
             throw new RuntimeException('The "curl" extension for PHP is required.');
@@ -11,11 +14,13 @@ class CurlTransport extends BaseTransport {
     /**
      * @param string[] $headers
      * @param string $body
-     * @return int|null HTTP response code
+     * @return bool Success
      */
     public function send($headers, $body) {
-        $responseCode = null;
-        $responseText = null;
+        if (!is_array($headers)) {
+            $headers = [$headers];
+        }
+        $body = strval($body);
 
         unset($headers['Host']); // client will generate "Host" header
         $headerStrings = [];
@@ -43,12 +48,12 @@ class CurlTransport extends BaseTransport {
         $responseInfo = curl_getinfo($client);
         curl_close($client);
 
-        if ($responseText) {
-            $responseCode = $responseInfo['http_code'];
-        } else {
-            $responseCode = null;
-        }
+        $this->_lastNativeResultFromSend = [
+            'responseText' => $responseText,
+            'responseInfo' => $responseInfo,
+        ];
+        $this->_lastSuccessFromSend = ($responseText !== false);
 
-        return $responseCode;
+        return $this->_lastSuccessFromSend;
     }
 }

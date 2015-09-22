@@ -2,6 +2,9 @@
 require_once 'Viadutoo/transport/BaseTransport.php';
 
 class PeclHttpTransport extends BaseTransport {
+    /** @var http\Client\Response */
+    protected $_lastNativeResultFromSend;
+
     public function __construct() {
         if (!extension_loaded('http')) {
             throw new RuntimeException('The "http" (AKA "pecl_http") extension for PHP is required.');
@@ -11,11 +14,13 @@ class PeclHttpTransport extends BaseTransport {
     /**
      * @param string[] $headers
      * @param string $body
-     * @return int|null HTTP response code
+     * @return bool Success
      */
     public function send($headers, $body) {
-        $responseCode = null;
-        $responseText = null;
+        if (!is_array($headers)) {
+            $headers = [$headers];
+        }
+        $body = strval($body);
 
         unset($headers['Host']); // client will generate "Host" header
 
@@ -40,9 +45,9 @@ class PeclHttpTransport extends BaseTransport {
             ->send()
             ->getResponse($request);
 
-        $responseCode = $response->getResponseCode();
-        $responseText = $responseCode;
+        $this->_lastNativeResultFromSend = $response;
+        $this->_lastSuccessFromSend = ($response->getResponseCode() == 200);
 
-        return $responseCode;
+        return $this->_lastSuccessFromSend;
     }
 }

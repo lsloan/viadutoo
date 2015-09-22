@@ -1,7 +1,9 @@
 <?php
+require_once 'Viadutoo/db/BaseStorage.php';
 
-
-class SQLite3Storage implements StorageInterface {
+class SQLite3Storage extends BaseStorage {
+    /** @var SQLite3Result|bool  SQLite3Result on success, FALSE on failure. */
+    protected $_lastNativeResultFromStore;
     /** @var SQLite3 */
     private $_databaseHandle;
     /** @var string */
@@ -11,7 +13,10 @@ class SQLite3Storage implements StorageInterface {
      * @param string $databaseFilename
      */
     public function __construct($databaseFilename, $tableName = 'events') {
-        $this->_tableName = strval($tableName);
+        $databaseFilename = strval($databaseFilename);
+        $tableName = strval($tableName);
+
+        $this->_tableName = $tableName;
         $this->_databaseHandle = new SQLite3($databaseFilename);
 
         if ($this->_databaseHandle->lastErrorCode() != 0) {
@@ -31,9 +36,14 @@ EOT
     /**
      * @param string[] $headers
      * @param string $body
-     * @return SQLite3Result
+     * @return bool Success
      */
     public function store($headers, $body) {
+        if (!is_array($headers)) {
+            $headers = [$headers];
+        }
+        $body = strval($body);
+
         $tableName = $this->_tableName;
         $statement = $this->_databaseHandle
             ->prepare("INSERT INTO $tableName (id, headers, body) VALUES (null, :headers, :body)");
@@ -41,6 +51,9 @@ EOT
         $statement->bindValue(':body', $body, SQLITE3_TEXT);
         $result = $statement->execute();
 
-        return $result;
+        $this->_lastNativeResultFromStore = $result;
+        $this->_lastSuccessFromStore = ($result !== false);
+
+        return $this->_lastSuccessFromStore;
     }
 }

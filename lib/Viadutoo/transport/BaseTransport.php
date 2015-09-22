@@ -2,10 +2,28 @@
 require_once 'Viadutoo/transport/TransportInterface.php';
 
 abstract class BaseTransport implements TransportInterface {
+    /** @var mixed */
+    protected $_lastNativeResultFromSend;
+    /** @var bool */
+    protected $_lastSuccessFromSend;
     /** @var string */
     private $_endpointUrl;
     /** @var float|null */
     private $_timeoutSeconds;
+
+    /**
+     * Return whatever type of information the transport gives as a result of posting the data
+     *
+     * @return mixed
+     */
+    public function getLastNativeResultFromSend() {
+        return $this->_lastNativeResultFromSend;
+    }
+
+    /** @return bool */
+    public function getLastSuccessFromSend() {
+        return $this->_lastSuccessFromSend;
+    }
 
     /** @return string */
     public function getEndpointUrl() {

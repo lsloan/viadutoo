@@ -6,7 +6,7 @@
  * and store them via the specified storage interface if the send fails.
  */
 
-require_once '../lib/Viadutoo/Proxy.php';
+require_once '../lib/Viadutoo/MessageProxy.php';
 require_once 'Viadutoo/transport/PeclHttpTransport.php';
 require_once 'Viadutoo/transport/CurlTransport.php';
 require_once 'Viadutoo/db/MysqlStorage.php';
@@ -62,10 +62,10 @@ if ($validMethod === true) {
         ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
         ->setTimeoutSeconds(15)
         ->setAutostoreOnSendFailure(false)
-        ->setStorageInterface(new SQLite3Storage('mysqlitedb.db'));
+        ->setStorageInterface(new SQLite3Storage('viadutoo_example.db'));
 //      ->setStorageInterface(new MysqlStorage('127.0.0.1', 'root', 'root', 'media'));
 
-    $success = null;
+    $success = false;
     try {
         $success = $proxy
             ->setHeaders($headers)

@@ -21,7 +21,17 @@ interface TransportInterface {
     /**
      * @param string[] $headers
      * @param string $body
-     * @return int|null HTTP response code
+     * @return bool Success
      */
     public function send($headers, $body);
+
+    /**
+     * Return whatever type of information the transport gives as a result of posting the data
+     *
+     * @return mixed
+     */
+    public function getLastNativeResultFromSend();
+
+    /** @return bool */
+    public function getLastSuccessFromSend();
 }
