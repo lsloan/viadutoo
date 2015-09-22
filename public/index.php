@@ -1,6 +1,6 @@
 <?php
 /*
- * This application is an example of using Viadutoo's Proxy class along
+ * This application is an example of using Viadutoo's MessageProxy class along
  * with its TransportInterface and StorageInterface implementations to
  * accept JSON payloads, attempt to send them via the specified transport,
  * and store them via the specified storage interface if the send fails.
@@ -56,7 +56,7 @@ if ($validMethod === true) {
     error_log("Raw post data:\n${body}");
     error_log('Received ' . strlen($body) . ' bytes');
 
-    $proxy = (new Proxy())
+    $proxy = (new MessageProxy())
         ->setTransportInterface(new PeclHttpTransport())
 //      ->setTransportInterface(new CurlTransport())
         ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
