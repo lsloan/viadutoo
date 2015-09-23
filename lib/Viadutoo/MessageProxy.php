@@ -188,24 +188,4 @@ class MessageProxy {
         $this->_storageInterface = $storageInterface;
         return $this;
     }
-
-    /** @return mixed */
-    public function getLastNativeResultFromSend() {
-        return $this->getTransportInterface()->getLastNativeResultFromSend();
-    }
-
-    /** @return bool */
-    public function getLastSuccessFromSend() {
-        return $this->getTransportInterface()->getLastSuccessFromSend();
-    }
-
-    /** @return mixed */
-    public function getLastNativeResultFromStore() {
-        return $this->getStorageInterface()->getLastNativeResultFromStore();
-    }
-
-    /** @return bool */
-    public function getLastSuccessFromStore() {
-        return $this->getStorageInterface()->getLastSuccessFromStore();
-    }
 }
