@@ -28,6 +28,14 @@ class CurlTransport extends BaseTransport {
             $headerStrings[] = $headerKey . ': ' . $headerValue;
         }
 
+        /*
+         * If headers don't include "Expect", set an empty one to prevent
+         * cURL from adding "Expect: 100-continue" automatically.
+         */
+        if (!array_key_exists('Expect', $headers)) {
+            $headerStrings[] = 'Expect:';
+        }
+
         $client = curl_init($this->getEndpointUrl());
 
         curl_setopt_array($client, [
@@ -52,7 +60,7 @@ class CurlTransport extends BaseTransport {
             'responseText' => $responseText,
             'responseInfo' => $responseInfo,
         ];
-        $this->_lastSuccessFromSend = ($responseText !== false);
+        $this->_lastSuccessFromSend = ($responseInfo['http_code'] === 200);
 
         return $this->_lastSuccessFromSend;
     }
