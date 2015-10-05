@@ -22,6 +22,7 @@ class MysqlStorage extends BaseStorage {
         $this->_databaseHandle->query(<<<"EOT"
             CREATE TABLE IF NOT EXISTS $tableName (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                message_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 headers text NOT NULL,
                 body text NOT NULL
             )
@@ -47,7 +48,7 @@ EOT
         $statement->bind_param('ss', $encodedHeaders, $body);
         $success = $statement->execute();
 
-        $this->_lastNativeResultFromStore = $statement->get_result(); // TODO: Causes dupes?
+        $this->_lastNativeResultFromStore = null; // No response available for mysqli
         $this->_lastSuccessFromStore = $success;
 
         return $success;
