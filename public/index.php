@@ -55,7 +55,7 @@ function respondAndCloseConnection() {
     return $validRequest;
 }
 
-$validRequest = respondAndCloseConnection($validMethod);
+$validRequest = respondAndCloseConnection();
 
 if ($validRequest !== true) {
     exit;
@@ -79,7 +79,7 @@ $proxy = (new MessageProxy())
     ->setStorageInterface(new SQLite3Storage('viadutoo_example.db'));
 //      ->setStorageInterface(new MysqlStorage('127.0.0.1', 'root', 'root', 'media'));
 
-$success = false;
+$success = null ;
 try {
     $success = $proxy
         ->setHeaders($headers)
