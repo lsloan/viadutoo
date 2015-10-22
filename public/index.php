@@ -19,64 +19,77 @@ require_once 'Viadutoo/db/SQLite3Storage.php';
  * It may take time for the sending of data to complete and that shouldn't be allowed to get in
  * the way.
  *
- * @param bool $validMethod
+ * @return bool Request is valid
  */
-function respondAndCloseConnection($validMethod) {
+function respondAndCloseConnection() {
     ob_end_clean(); // Discard any previous output
     ob_start(); // Start output buffer so it can be flushed on demand
 
-    if ($validMethod !== true) {
+    $validRequestHost = (@$_SERVER['SERVER_NAME'] === @$_SERVER['REMOTE_ADDR']) &&
+        (@$_SERVER['SERVER_NAME'] === '127.0.0.1');
+    $validRequestMethod = (strtoupper($_SERVER['REQUEST_METHOD']) === 'POST');
+
+    $validRequest = false;
+
+    if ($validRequestHost !== true) {
+        http_response_code(403);
+        echo '403 Forbidden';
+    } elseif ($validRequestMethod !== true) {
         http_response_code(405);
         echo '405 Method not allowed';
     } else {
-        http_response_code(100);
-        // Don't send message; it may change response code
+        http_response_code(200); //OK
+        $validRequest = true;
     }
 
     header('Content-Length: ' . ob_get_length());
-    header('Connection: close');  // Tell remote client to close connection
+    header('Connection: close');  // Tell client to close connection *now*
 
     ob_end_flush(); // End output buffer and flush it to client (part 1)
     flush(); // Part 2 of complete flush
 
-    // Close any session to prevent blocking
-    if (session_id()) session_write_close();
+    if (session_id()) {
+        session_write_close(); // Closing session prevents blocking on later requests
+    }
+
+    return $validRequest;
 }
 
-$validMethod = (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST');
-respondAndCloseConnection($validMethod);
+$validRequest = respondAndCloseConnection();
 
-if ($validMethod === true) {
-    $headers = getallheaders();
-    $body = file_get_contents('php://input');
+if ($validRequest !== true) {
+    exit;
+}
 
-    foreach ($headers as $name => $value) {
-        error_log("${name}: ${value}");
-    }
-    error_log("Raw post data:\n${body}");
-    error_log('Received ' . strlen($body) . ' bytes');
+$headers = getallheaders();
+$body = file_get_contents('php://input');
 
-    $proxy = (new MessageProxy())
-        ->setTransportInterface(new PeclHttpTransport())
+foreach ($headers as $name => $value) {
+    error_log("${name}: ${value}");
+}
+error_log("Raw post data:\n${body}");
+error_log('Received ' . strlen($body) . ' bytes');
+
+$proxy = (new MessageProxy())
+    ->setTransportInterface(new PeclHttpTransport())
 //      ->setTransportInterface(new CurlTransport())
-        ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
-        ->setTimeoutSeconds(15)
-        ->setAutostoreOnSendFailure(false)
-        ->setStorageInterface(new SQLite3Storage('viadutoo_example.db'));
+    ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
+    ->setTimeoutSeconds(15)
+    ->setAutostoreOnSendFailure(false)
+    ->setStorageInterface(new SQLite3Storage('viadutoo_example.db'));
 //      ->setStorageInterface(new MysqlStorage('127.0.0.1', 'root', 'root', 'media'));
 
-    $success = false;
-    try {
-        $success = $proxy
-            ->setHeaders($headers)
-            ->setBody($body)
-            ->send();
-    } catch (Exception $exception) {
-        error_log($exception->getMessage());
-    }
+$success = null ;
+try {
+    $success = $proxy
+        ->setHeaders($headers)
+        ->setBody($body)
+        ->send();
+} catch (Exception $exception) {
+    error_log($exception->getMessage());
+}
 
-    if (($success !== true) && !$proxy->isAutostoreOnSendFailure()) {
-        error_log('Send not successful, storing data...');
-        $proxy->store();
-    }
+if (($success !== true) && !$proxy->isAutostoreOnSendFailure()) {
+    error_log('Send not successful, storing data...');
+    $proxy->store();
 }
