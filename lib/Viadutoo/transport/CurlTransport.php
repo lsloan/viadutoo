@@ -60,7 +60,10 @@ class CurlTransport extends BaseTransport {
             'responseText' => $responseText,
             'responseInfo' => $responseInfo,
         ];
-        $this->_lastSuccessFromSend = ($responseInfo['http_code'] === 200);
+
+        $responseHttpCode = $responseInfo['http_code'];
+        // Any HTTP response code in the 200s is considered success
+        $this->_lastSuccessFromSend = (($responseHttpCode >= 200) && ($responseHttpCode <= 299));
 
         return $this->_lastSuccessFromSend;
     }

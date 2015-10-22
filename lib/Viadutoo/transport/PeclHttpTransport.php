@@ -46,7 +46,10 @@ class PeclHttpTransport extends BaseTransport {
             ->getResponse($request);
 
         $this->_lastNativeResultFromSend = $response;
-        $this->_lastSuccessFromSend = ($response->getResponseCode() == 200);
+
+        $responseHttpCode = $response->getResponseCode();
+        // Any HTTP response code in the 200s is considered success
+        $this->_lastSuccessFromSend = (($responseHttpCode >= 200) && ($responseHttpCode <= 299));
 
         return $this->_lastSuccessFromSend;
     }
