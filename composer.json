@@ -1,7 +1,6 @@
 {
   "name": "viadutoo",
   "description": "Viadutoo: caching proxy endpoint for Caliper event data",
-  "version": "1.0.0",
   "keywords": ["viadutoo"],
   "license": "proprietary",
   "authors": [
