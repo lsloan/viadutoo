@@ -1,5 +1,5 @@
 {
-  "name": "umich-its-tl/viadutoo",
+  "name": "viadutoo",
   "description": "Viadutoo: caching proxy endpoint for Caliper event data",
   "keywords": ["viadutoo"],
   "license": "proprietary",
