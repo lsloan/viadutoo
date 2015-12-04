@@ -1,0 +1,16 @@
+{
+  "name": "umich-its-tl/viadutoo",
+  "description": "Viadutoo: caching proxy endpoint for Caliper event data",
+  "keywords": ["viadutoo"],
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Lance E Sloan",
+      "email": "lsloan-viadutoo-composer@umich.edu",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.4"
+  }
+}
