@@ -48,7 +48,7 @@ class MessageProxy {
             if ($this->isAutostoreOnSendFailure()) {
                 $this->store();
             } else {
-                throw new RuntimeException('Failure: HTTP error: ' . $this->getLastNativeResultFromSend());
+                throw new RuntimeException('Failure: HTTP error: ' . print_r($transportInterface->getLastNativeResultFromSend(), true));
             }
         }
 

@@ -4,11 +4,36 @@ require_once 'Viadutoo/transport/BaseTransport.php';
 class CurlTransport extends BaseTransport {
     /** @var array */
     protected $_lastNativeResultFromSend;
+    /** @var string|null */
+    private $_caCertPath = null;
 
     public function __construct() {
         if (!extension_loaded('curl')) {
             throw new RuntimeException('The "curl" extension for PHP is required.');
         }
+    }
+
+    /** @return null|string The directory path to CA certificate files */
+    public function getCACertPath() {
+        return $this->_caCertPath;
+    }
+
+    /**
+     * Specify a directory path which contains CA certificate files that will be
+     * used to verify the certificate of remote peers when HTTPS is used.  The value
+     * will be used for cURL option CURLOPT_CAPATH.
+     *
+     * @param string $caCertPath
+     * @return $this
+     */
+    public function setCACertPath($caCertPath = null) {
+        if ($caCertPath != null) {
+            $this->_caCertPath = floatval($caCertPath);
+        } else {
+            $this->_caCertPath = null;
+        }
+
+        return $this;
     }
 
     /**
@@ -46,6 +71,10 @@ class CurlTransport extends BaseTransport {
             CURLOPT_RETURNTRANSFER => true, // required to return response text
             CURLOPT_POSTFIELDS => $body,
         ]);
+
+        if ($this->_caCertPath != null) {
+            curl_setopt($client, CURLOPT_CAPATH, $this->_caCertPath);
+        }
 
         $timeoutSeconds = $this->getTimeoutSeconds();
         if ($timeoutSeconds != null) {
