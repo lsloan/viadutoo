@@ -28,7 +28,7 @@ class CurlTransport extends BaseTransport {
      */
     public function setCACertPath($caCertPath = null) {
         if ($caCertPath != null) {
-            $this->_caCertPath = floatval($caCertPath);
+            $this->_caCertPath = strval($caCertPath);
         } else {
             $this->_caCertPath = null;
         }
