@@ -20,6 +20,8 @@ class MysqlStorage extends BaseStorage {
             throw new Exception('Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
         }
 
+        // fixme: Causes trouble if DB user doesn't have table create permission
+        /*
         $success = $this->_databaseHandle->query(<<<"EOT"
             CREATE TABLE IF NOT EXISTS $tableName (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -34,6 +36,7 @@ EOT
             error_log('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
             throw new Exception('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
         }
+        */
     }
 
     /**
