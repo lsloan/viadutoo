@@ -16,10 +16,11 @@ class MysqlStorage extends BaseStorage {
         $this->_databaseHandle = new mysqli($host, $userName, $password, $dbName);
 
         if ($this->_databaseHandle->connect_error) {
-            throw new Exception('Unable to connect to DB.');
+            error_log('Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
+            throw new Exception('Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
         }
 
-        $this->_databaseHandle->query(<<<"EOT"
+        $success = $this->_databaseHandle->query(<<<"EOT"
             CREATE TABLE IF NOT EXISTS $tableName (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 message_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -28,6 +29,11 @@ class MysqlStorage extends BaseStorage {
             )
 EOT
         );
+
+        if (!$success) {
+            error_log('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
+            throw new Exception('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
+        }
     }
 
     /**
@@ -45,7 +51,19 @@ EOT
         $encodedHeaders = json_encode($headers);
         $statement = $this->_databaseHandle
             ->prepare("INSERT INTO $tableName (id, headers, body) VALUES (null, ?, ?)");
-        $statement->bind_param('ss', $encodedHeaders, $body);
+
+        if (!$statement) {
+            error_log('Unable to prepare statement: ' . $this->_databaseHandle->error);
+            throw new Exception('Unable to prepare statement: ' . $this->_databaseHandle->error);
+        }
+
+        $bindSuccess = $statement->bind_param('ss', $encodedHeaders, $body);
+
+        if (!$bindSuccess) {
+            error_log('Unable to bind statement params: ' . $this->_databaseHandle->error);
+            throw new Exception('Unable to bind statement params: ' . $this->_databaseHandle->error);
+        }
+
         $success = $statement->execute();
 
         $this->_lastNativeResultFromStore = null; // No response available for mysqli
