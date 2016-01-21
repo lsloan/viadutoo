@@ -12,8 +12,90 @@ future processing.
 
 * PHP 5.4 or greater
 * One of the following PHP HTTP client extensions:
+    * curl (usually this is already included with PHP interpreter)
     * pecl_http
-    * curl
+* Composer (not strictly required, but highly recommended)
+    * For installation details, see: https://getcomposer.org/download/
+
+## Usage
+
+* Update the `composer.json` file in the root directory of your project as follows:
+    * The `require` section should include the following:
+
+        ```json
+        {
+            "require": {
+                "php": ">=5.4",
+                "umich-its-tl/viadutoo": "1.0.1"
+            }
+        }
+        ```
+
+    * If a repository is not specified, Composer will install Viadutoo from
+        Packagist (https://packagist.org/packages/umich-its-tl/viadutoo).
+        However, to specify a GitHub repository as the source instead, include
+        the following in the `repositories` section:
+
+        ```json
+        {
+            "repositories": [
+                {
+                    "type": "vcs",
+                    "url": "https://github.com/tl-its-umich-edu/viadutoo"
+                }
+            ]
+        }
+        ```
+
+        This is one way to specify your own repository, for example, if
+        you want to modify your own fork of Viadutoo.  You would specify
+        the URL of your own repository.
+* Use Composer to install the package with the command:
+
+    ```sh
+    composer install
+    ```
+
+    Composer will create the `vendor` directory to hold the package and
+    other related information.
+* Composer will create PHP classes to help you load Viadutoo (and any other
+    packages it has loaded) into your application.  In your PHP code, use it like:
+
+    ```php
+    /*
+     * If necessary, use set_include_path() to ensure the directory
+     * containing the "vendor" directory is in the PHP include path.
+     */
+    require_once 'vendor/autoload.php';  // Composer loader for Viadutoo, etc.
+    ```
+
+* Initialize and use Viadutoo in your PHP code like this:
+
+    ```php
+    $proxy = (new MessageProxy())
+        ->setTransportInterface((new CurlTransport()))
+        ->setEndpointUrl('http://example.com/endpoint')
+        ->setTimeoutSeconds(10)
+        ->setAutostoreOnSendFailure(true)
+        ->setStorageInterface(
+            new MysqlStorage(
+                'mysql.example.org', 'dbUser', 'dbPassword',
+                'dbName', 'viadutoo_events'
+            )
+        );
+    // ...
+    try {
+        $proxy
+            ->setHeaders($headers)
+            ->setBody($jsonBody)
+            ->send();
+    } catch (Exception $exception) {
+        error_log($exception->getMessage());
+    }
+    ```
+
+    For a more detailed example of using Viadutoo in an application, see
+    `public/index.php`.
 
 ## Example
 
