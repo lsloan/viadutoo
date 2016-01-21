@@ -16,27 +16,26 @@ class MysqlStorage extends BaseStorage {
         $this->_databaseHandle = new mysqli($host, $userName, $password, $dbName);
 
         if ($this->_databaseHandle->connect_error) {
-            error_log('Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
-            throw new Exception('Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
-        }
+            error_log(__METHOD__ . ': Unable to connect to DB: ' . $this->_databaseHandle->connect_error);
+        } else {
 
-        // fixme: Causes trouble if DB user doesn't have table create permission
-        /*
-        $success = $this->_databaseHandle->query(<<<"EOT"
-            CREATE TABLE IF NOT EXISTS $tableName (
-                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                message_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                headers text NOT NULL,
-                body text NOT NULL
-            )
+            // fixme: Causes trouble if DB user doesn't have table create permission
+            /*
+            $success = $this->_databaseHandle->query(<<<"EOT"
+                CREATE TABLE IF NOT EXISTS $tableName (
+                    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    message_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    headers text NOT NULL,
+                    body text NOT NULL
+                )
 EOT
-        );
+            );
 
-        if (!$success) {
-            error_log('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
-            throw new Exception('Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
+            if (!$success) {
+                error_log(__METHOD__ . ': Unable to create table ' . $tableName . ': ' . $this->_databaseHandle->error);
+            }
+            */
         }
-        */
     }
 
     /**
@@ -50,24 +49,25 @@ EOT
         }
         $body = strval($body);
 
+        $success = false;
+
         $tableName = $this->_tableName;
         $encodedHeaders = strval(json_encode($headers));
+
         $statement = $this->_databaseHandle
             ->prepare("INSERT INTO $tableName (id, headers, body) VALUES (null, ?, ?)");
 
         if (!$statement) {
-            error_log('Unable to prepare statement: ' . $this->_databaseHandle->error);
-            throw new Exception('Unable to prepare statement: ' . $this->_databaseHandle->error);
+            error_log(__METHOD__ . ': Unable to prepare statement: ' . $this->_databaseHandle->error);
+        } else {
+            $bindSuccess = $statement->bind_param('ss', $encodedHeaders, $body);
+
+            if (!$bindSuccess) {
+                error_log(__METHOD__ . ': Unable to bind statement params: ' . $this->_databaseHandle->error);
+            } else {
+                $success = $statement->execute();
+            }
         }
-
-        $bindSuccess = $statement->bind_param('ss', $encodedHeaders, $body);
-
-        if (!$bindSuccess) {
-            error_log('Unable to bind statement params: ' . $this->_databaseHandle->error);
-            throw new Exception('Unable to bind statement params: ' . $this->_databaseHandle->error);
-        }
-
-        $success = $statement->execute();
 
         $this->_lastNativeResultFromStore = null; // No response available for mysqli
         $this->_lastSuccessFromStore = $success;
