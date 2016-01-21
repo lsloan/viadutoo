@@ -48,7 +48,7 @@ EOT
         $body = strval($body);
 
         $tableName = $this->_tableName;
-        $encodedHeaders = json_encode($headers);
+        $encodedHeaders = strval(json_encode($headers));
         $statement = $this->_databaseHandle
             ->prepare("INSERT INTO $tableName (id, headers, body) VALUES (null, ?, ?)");
 
