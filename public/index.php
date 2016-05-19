@@ -6,6 +6,8 @@
  * and store them via the specified storage interface if the send fails.
  */
 
+require_once '../vendor/autoload.php';
+
 require_once '../lib/Viadutoo/MessageProxy.php';
 require_once 'Viadutoo/transport/PeclHttpTransport.php';
 require_once 'Viadutoo/transport/CurlTransport.php';
@@ -71,15 +73,16 @@ error_log("Raw post data:\n${body}");
 error_log('Received ' . strlen($body) . ' bytes');
 
 $proxy = (new MessageProxy())
-    ->setTransportInterface(new PeclHttpTransport())
-//      ->setTransportInterface(new CurlTransport())
+//    ->setTransportInterface(new PeclHttpTransport())
+    ->setTransportInterface((new CurlTransport())
+        ->setAuthZType(CurlTransport::AUTHZ_TYPE_OAUTH1, 'OAuth 1.0 key', 'OAuth 1.0 secret'))
     ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
     ->setTimeoutSeconds(15)
     ->setAutostoreOnSendFailure(false)
     ->setStorageInterface(new SQLite3Storage('viadutoo_example.db'));
 //      ->setStorageInterface(new MysqlStorage('127.0.0.1', 'root', 'root', 'media'));
 
-$success = null ;
+$success = null;
 try {
     $success = $proxy
         ->setHeaders($headers)
