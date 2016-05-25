@@ -73,8 +73,10 @@ error_log("Raw post data:\n${body}");
 error_log('Received ' . strlen($body) . ' bytes');
 
 $proxy = (new MessageProxy())
-    ->setTransportInterface((new CurlTransport()) // Recommended transport with cURL, supports Basic Auth and OAuth 1.0
-        ->setAuthZType(CurlTransport::AUTHZ_TYPE_OAUTH1, 'OAuth 1.0 key', 'OAuth 1.0 secret'))
+    ->setTransportInterface(
+        (new CurlTransport()) // Recommended transport with cURL, supports Basic Auth and OAuth 1.0
+            ->setAuthZType(CurlTransport::AUTHZ_TYPE_OAUTH1, 'OAuth 1.0 key', 'OAuth 1.0 secret') // Optional authZ
+    )
 //    ->setTransportInterface(new PeclHttpTransport()) // Alternate transport with pecl_http, doesn't support authZ
     ->setEndpointUrl('http://lti.tools/caliper/event?key=viadutoo')
     ->setTimeoutSeconds(15)
