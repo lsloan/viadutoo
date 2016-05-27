@@ -73,7 +73,10 @@ future processing.
 
     ```php
     $proxy = (new MessageProxy())
-        ->setTransportInterface((new CurlTransport()))
+        ->setTransportInterface(
+            (new CurlTransport()) // Recommended transport with cURL, supports Basic Auth and OAuth 1.0
+                ->setAuthZType(CurlTransport::AUTHZ_TYPE_OAUTH1, 'OAuth 1.0 key', 'OAuth 1.0 secret') // Optional authZ
+        )
         ->setEndpointUrl('http://example.com/endpoint')
         ->setTimeoutSeconds(10)
         ->setAutostoreOnSendFailure(true)

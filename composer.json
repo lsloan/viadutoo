@@ -1,7 +1,9 @@
 {
   "name": "umich-its-tl/viadutoo",
   "description": "Viadutoo: caching proxy endpoint for Caliper event data",
-  "keywords": ["viadutoo"],
+  "keywords": [
+    "viadutoo"
+  ],
   "license": "proprietary",
   "authors": [
     {
@@ -11,9 +13,12 @@
     }
   ],
   "require": {
-    "php": ">=5.4"
+    "php": ">=5.4",
+    "eher/oauth": "1.0.7"
   },
   "autoload": {
-    "files": ["lib/Viadutoo/MessageProxy.php"]
+    "files": [
+      "lib/Viadutoo/MessageProxy.php"
+    ]
   }
 }
