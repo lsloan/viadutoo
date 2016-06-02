@@ -3,8 +3,14 @@ require_once 'Viadutoo/transport/BaseTransport.php';
 
 class CurlTransport extends BaseTransport {
     const
+        // Authorization types
         AUTHZ_TYPE_BASICAUTH = 'BASICAUTH',
         AUTHZ_TYPE_OAUTH1 = 'OAUTH1',
+        // Important HTTP header names
+        HTTP_HEADER_AUTHORIZATION = 'Authorization',
+        HTTP_HEADER_EXPECT = 'Expect',
+        HTTP_HEADER_HOST = 'Host',
+        // HTTP method used for sending
         HTTP_METHOD_POST = 'POST';
 
     /** @var array */
@@ -58,20 +64,6 @@ class CurlTransport extends BaseTransport {
         }
         $body = strval($body);
 
-        unset($headers['Host']); // client will generate "Host" header
-        $headerStrings = [];
-        foreach ($headers as $headerKey => $headerValue) {
-            $headerStrings[] = $headerKey . ': ' . $headerValue;
-        }
-
-        /*
-         * If headers don't include "Expect", set an empty one to prevent
-         * cURL from adding "Expect: 100-continue" automatically.
-         */
-        if (!array_key_exists('Expect', $headers)) {
-            $headerStrings[] = 'Expect:';
-        }
-
         $client = curl_init($this->getEndpointUrl());
 
         curl_setopt_array($client, [
@@ -92,10 +84,24 @@ class CurlTransport extends BaseTransport {
         }
 
         if ($this->_authZType === self::AUTHZ_TYPE_BASICAUTH) {
+            unset($headers[self::HTTP_HEADER_AUTHORIZATION]); // Let cURL create a new "Authorization" header
             curl_setopt($client, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
             curl_setopt($client, CURLOPT_USERPWD, $this->_authZUserOrKey . ':' . $this->_authZPasswordOrSecret);
         } elseif ($this->_authZType === self::AUTHZ_TYPE_OAUTH1) {
-            $headerStrings[] = $this->makeOAuthHeader();
+            $headers[self::HTTP_HEADER_AUTHORIZATION] = $this->makeOAuthHeaderValue(); // Replace any existing "Authorization" header
+        }
+
+        unset($headers[self::HTTP_HEADER_HOST]); // cURL will generate "Host" header
+
+        /*
+         * If headers don't include "Expect", set an empty one to prevent
+         * cURL from adding "Expect: 100-continue" automatically.
+         */
+        @$headers[self::HTTP_HEADER_EXPECT] .= null;
+
+        $headerStrings = [];
+        foreach ($headers as $headerKey => $headerValue) {
+            $headerStrings[] = $headerKey . ': ' . $headerValue;
         }
 
         curl_setopt($client, CURLOPT_HTTPHEADER, $headerStrings);
@@ -120,7 +126,7 @@ class CurlTransport extends BaseTransport {
      * @return string
      * @throws \Eher\OAuth\OAuthException
      */
-    protected function makeOAuthHeader() {
+    protected function makeOAuthHeaderValue() {
         $consumer = new Eher\OAuth\Consumer($this->_authZUserOrKey, $this->_authZPasswordOrSecret);
         $token = null;
         $httpMethod = self::HTTP_METHOD_POST;
@@ -131,7 +137,7 @@ class CurlTransport extends BaseTransport {
         );
         $request->sign_request((new Eher\OAuth\HmacSha1()), $consumer, $token);
 
-        return $request->to_header();
+        return substr($request->to_header(), strlen(self::HTTP_HEADER_AUTHORIZATION . ': '));
     }
 
     /**
