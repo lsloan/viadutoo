@@ -26,7 +26,7 @@ future processing.
         {
             "require": {
                 "php": ">=5.4",
-                "umich-its-tl/viadutoo": "1.0.1"
+                "umich-its-tl/viadutoo": "1.1.0"
             }
         }
         ```
