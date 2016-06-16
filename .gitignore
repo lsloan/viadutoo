@@ -1,3 +1,5 @@
 .idea
 mysqlitedb.db
 viadutoo_example.db
+doc-build/
+phpdoc-cache/
