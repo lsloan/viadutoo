@@ -16,6 +16,10 @@
     "php": ">=5.4",
     "eher/oauth": "1.0.7"
   },
+  "require-dev": {
+    "phpdocumentor/phpdocumentor": "2.*",
+    "evert/phpdoc-md": "~0.2.0"
+  },
   "autoload": {
     "files": [
       "lib/Viadutoo/MessageProxy.php"
